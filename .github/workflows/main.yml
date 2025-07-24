@@ -19,15 +19,15 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -p 22 -H 51.20.72.97 >> ~/.ssh/known_hosts
 
     - name: Copy repo to EC2
       run: |
-        rsync -avz -e "ssh -p ${{ secrets.EC2_PORT }}" . ${{ secrets.EC2_HOST }}:~/django-note-app
+        rsync -avz -e "ssh -p 22" . ubuntu@51.20.72.97:~/django-note-app
 
     - name: Run Docker on EC2
       run: |
-        ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} << 'EOF'
+        ssh -p 22 ubuntu@51.20.72.97 << 'EOF'
           cd ~/django-note-app
           docker stop notes-app || true
           docker rm notes-app || true
