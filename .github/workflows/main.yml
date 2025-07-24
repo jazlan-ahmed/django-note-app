@@ -1,0 +1,36 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy on EC2
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Copy repo to EC2
+      run: |
+        rsync -avz -e "ssh -p ${{ secrets.EC2_PORT }}" . ${{ secrets.EC2_HOST }}:~/django-note-app
+
+    - name: Run Docker on EC2
+      run: |
+        ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} << 'EOF'
+          cd ~/django-note-app
+          docker stop notes-app || true
+          docker rm notes-app || true
+          docker build -t notes-app .
+          docker run -d -p 8000:8000 --name notes-app notes-app
+        EOF
